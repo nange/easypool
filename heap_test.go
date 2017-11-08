@@ -75,12 +75,15 @@ func TestPriorityQueue(t *testing.T) {
 	if pc1.updatedtime.Sub(pc2.updatedtime) > 0 {
 		t.Errorf("priority is invalid, older conn should first out")
 	}
+	pc1.Close()
+	pc2.Close()
+
 	p.Close()
 }
 
 func TestPoolConcurrent(t *testing.T) {
 	p, _ := newHeapPool()
-	for i := 0; i < 100; i++ {
+	for i := 0; i < MaxCap+10; i++ {
 		conn, err := p.Get()
 		if err != nil {
 			t.Errorf("Get error: %s", err)
@@ -93,13 +96,37 @@ func TestPoolConcurrent(t *testing.T) {
 
 	time.Sleep(5 * time.Second)
 	if p.Len() != MaxCap {
-		t.Errorf("Pool length should equals MaxCap, but get:%v", p.Len())
+		t.Errorf("Pool length should equals:, but get:%v", MaxCap, p.Len())
 	}
 
 	time.Sleep(time.Minute)
 	if p.Len() != MaxIdle {
 		t.Errorf("Pool length should equals MaxIdle, but get:%v", p.Len())
 	}
+	p.Close()
+}
+
+func TestPoolConcurrent2(t *testing.T) {
+	p, _ := newHeapPool()
+	for i := 0; i < MaxCap; i++ {
+		conn, err := p.Get()
+		if err != nil {
+			t.Errorf("Get error: %s", err)
+		}
+		go func(conn net.Conn, i int) {
+			time.Sleep(time.Second)
+			if i >= MaxCap-10 {
+				conn.(*PoolConn).MarkUnusable()
+			}
+			conn.Close()
+		}(conn, i)
+	}
+
+	time.Sleep(5 * time.Second)
+	if p.Len() != MaxCap-10 {
+		t.Errorf("Pool length should equals:%v, but get:%v", MaxCap-10, p.Len())
+	}
+
 	p.Close()
 }
 

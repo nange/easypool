@@ -80,7 +80,7 @@ func NewHeapPool(config *PoolConfig) (Pool, error) {
 		maxIdle:     maxIdle,
 		idletime:    idletime,
 		maxLifetime: maxLifetime,
-		cleanerCh:   make(chan struct{}, 1),
+		cleanerCh:   make(chan struct{}),
 		factory:     config.Factory,
 	}
 
@@ -126,6 +126,9 @@ func (hp *heapPool) Close() {
 	hp.mu.Lock()
 	defer hp.mu.Unlock()
 
+	if hp.freeConn == nil {
+		return
+	}
 	hp.cleanerCh <- struct{}{}
 	hp.factory = nil
 	for hp.freeConn.Len() > 0 {
@@ -140,6 +143,9 @@ func (hp *heapPool) put(conn *PoolConn) error {
 	hp.mu.Lock()
 	defer hp.mu.Unlock()
 
+	if hp.freeConn == nil {
+		return ErrClosed
+	}
 	if hp.freeConn.Len() >= hp.maxCap {
 		return errors.New("pool have been filled")
 	}
@@ -151,6 +157,9 @@ func (hp *heapPool) Len() int {
 	hp.mu.Lock()
 	defer hp.mu.Unlock()
 
+	if hp.freeConn == nil {
+		return 0
+	}
 	return hp.freeConn.Len()
 }
 
