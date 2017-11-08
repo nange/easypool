@@ -32,7 +32,7 @@ if err != nil {
 }
 
 // do sth... with conn
-// 使用完连接之后，调用Close发放，当前连接会重新发挥pool中
+// 使用完连接之后，调用Close发放，当前连接会重新放回到pool中
 conn.Close()
 
 // 释放当前连接池中所有连接
