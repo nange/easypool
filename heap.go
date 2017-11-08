@@ -101,11 +101,11 @@ func NewHeapPool(config *PoolConfig) (Pool, error) {
 }
 
 func (hp *heapPool) Get() (net.Conn, error) {
+	hp.mu.Lock()
 	if hp.freeConn == nil {
+		hp.mu.Unlock()
 		return nil, ErrClosed
 	}
-
-	hp.mu.Lock()
 	for hp.freeConn.Len() > 0 {
 		pc := heap.Pop(hp.freeConn).(*PoolConn)
 		if time.Now().Sub(pc.updatedtime) <= hp.maxLifetime {

@@ -31,7 +31,6 @@ func TestNew(t *testing.T) {
 
 func TestPool(t *testing.T) {
 	p, _ := newHeapPool()
-	defer p.Close()
 
 	conn, err := p.Get()
 	if err != nil {
@@ -50,6 +49,58 @@ func TestPool(t *testing.T) {
 	if p.Len() != InitialCap {
 		t.Errorf("Pool size is invalid, size:%v", p.Len())
 	}
+
+	p.Close()
+
+	_, err = p.Get()
+	if err != ErrClosed {
+		t.Errorf("After pool closed, Get() should return ErrClosed error")
+	}
+}
+
+func TestPriorityQueue(t *testing.T) {
+	p, _ := newHeapPool()
+	conn1, err := p.Get()
+	if err != nil {
+		t.Errorf("Get error: %s", err)
+	}
+
+	conn2, err := p.Get()
+	if err != nil {
+		t.Errorf("Get error: %s", err)
+	}
+
+	pc1 := conn1.(*PoolConn)
+	pc2 := conn2.(*PoolConn)
+	if pc1.updatedtime.Sub(pc2.updatedtime) > 0 {
+		t.Errorf("priority is invalid, older conn should first out")
+	}
+	p.Close()
+}
+
+func TestPoolConcurrent(t *testing.T) {
+	p, _ := newHeapPool()
+	for i := 0; i < 100; i++ {
+		conn, err := p.Get()
+		if err != nil {
+			t.Errorf("Get error: %s", err)
+		}
+		go func(conn net.Conn) {
+			time.Sleep(time.Second)
+			conn.Close()
+		}(conn)
+	}
+
+	time.Sleep(5 * time.Second)
+	if p.Len() != MaxCap {
+		t.Errorf("Pool length should equals MaxCap, but get:%v", p.Len())
+	}
+
+	time.Sleep(time.Minute)
+	if p.Len() != MaxIdle {
+		t.Errorf("Pool length should equals MaxIdle, but get:%v", p.Len())
+	}
+	p.Close()
 }
 
 func newHeapPool() (Pool, error) {

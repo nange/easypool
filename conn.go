@@ -16,7 +16,7 @@ func (pc *PoolConn) Close() error {
 	pc.updatedtime = time.Now()
 
 	if err := pc.hp.put(pc); err != nil {
-		log.Printf("put conn err:%v\n", err)
+		log.Printf("put conn failed:%v\n", err)
 		pc.hp = nil
 		return pc.close()
 	}
