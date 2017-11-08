@@ -35,6 +35,10 @@ if err != nil {
 // 使用完连接之后，调用Close发放，当前连接会重新放回到pool中
 conn.Close()
 
+// 如果需要直接关闭底层连接(比如底层连接已经失效)，则：
+conn.(*PoolConn).MarkUnusable()
+conn.Close()
+
 // 释放当前连接池中所有连接
 pool.Close()
 
