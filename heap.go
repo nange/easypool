@@ -87,12 +87,25 @@ func NewHeapPool(config *PoolConfig) (Pool, error) {
 	pq := make(PriorityQueue, 0, maxCap)
 	heap.Init(&pq)
 	hp.freeConn = &pq
+
+	type res struct {
+		conn net.Conn
+		err  error
+	}
+	ch := make(chan res, initialCap)
 	for i := 0; i < initialCap; i++ {
-		conn, err := hp.factory()
-		if err != nil {
-			return nil, err
+		go func() {
+			conn, err := hp.factory()
+			ch <- res{conn: conn, err: err}
+		}()
+	}
+
+	for i := 0; i < initialCap; i++ {
+		ret := <-ch
+		if ret.err != nil {
+			return nil, ret.err
 		}
-		heap.Push(hp.freeConn, hp.wrapConn(conn))
+		heap.Push(hp.freeConn, hp.wrapConn(ret.conn))
 	}
 
 	go hp.cleaner()
