@@ -53,11 +53,11 @@ func NewHeapPool(config *PoolConfig) (Pool, error) {
 		return nil, ErrConfigInvalid
 	}
 
-	initialCap := 0
+	initialCap := 5
 	if config.InitialCap > 0 {
 		initialCap = config.InitialCap
 	}
-	maxCap := 20
+	maxCap := 50
 	if config.MaxCap > 0 {
 		maxCap = config.MaxCap
 	}
