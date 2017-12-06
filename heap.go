@@ -177,7 +177,7 @@ func (hp *heapPool) Len() int {
 }
 
 func (hp *heapPool) cleaner() {
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(hp.idletime / 2)
 	defer ticker.Stop()
 	for {
 		select {
