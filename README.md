@@ -12,7 +12,7 @@ tcp连接池，最初是为[easyss](http://github.com/nange/easyss)设计，作�
 
 ## 基本用法
 ```go
-factory    = func() (net.Conn, error) { return net.Dial("tcp", "localhost:7777") }
+factory := func() (net.Conn, error) { return net.Dial("tcp", "localhost:7777") }
 config := &PoolConfig{
 	InitialCap:  5,
 	MaxCap:      20,
