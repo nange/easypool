@@ -15,7 +15,7 @@ func (pq PriorityQueue) Len() int { return len(pq) }
 
 func (pq PriorityQueue) Less(i, j int) bool {
 	// we want to get the oldest item
-	return pq[i].updatedtime.Sub(pq[j].updatedtime) < 0
+	return pq[i].updatedTime.Sub(pq[j].updatedTime) < 0
 }
 
 func (pq PriorityQueue) Swap(i, j int) {
@@ -122,7 +122,7 @@ func (hp *heapPool) Get() (net.Conn, error) {
 	}
 	for hp.freeConn.Len() > 0 {
 		pc := heap.Pop(hp.freeConn).(*PoolConn)
-		if time.Now().Sub(pc.updatedtime) <= hp.maxLifetime {
+		if time.Now().Sub(pc.updatedTime) <= hp.maxLifetime {
 			hp.mu.Unlock()
 			return pc, nil
 		}
@@ -187,7 +187,7 @@ func (hp *heapPool) cleaner() {
 
 			for hp.freeConn.Len() > 0 {
 				pc := (*hp.freeConn)[0]
-				interval := time.Now().Sub(pc.updatedtime)
+				interval := time.Now().Sub(pc.updatedTime)
 				if interval >= hp.maxLifetime {
 					heap.Pop(hp.freeConn).(*PoolConn).close()
 					continue
@@ -209,7 +209,7 @@ func (hp *heapPool) cleaner() {
 }
 
 func (hp *heapPool) wrapConn(conn net.Conn) net.Conn {
-	p := &PoolConn{hp: hp, updatedtime: time.Now()}
+	p := &PoolConn{hp: hp, updatedTime: time.Now()}
 	p.Conn = conn
 	return p
 }

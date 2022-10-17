@@ -9,16 +9,26 @@ import (
 type PoolConn struct {
 	net.Conn
 	hp          *heapPool
-	updatedtime time.Time
+	updatedTime time.Time
 	unusable    bool
+	closed      bool
 }
 
+// Close put the connection back to pool if possible.
+// Executed by multi times is ok.
 func (pc *PoolConn) Close() error {
+	if pc.closed {
+		return nil
+	}
+	defer func() {
+		pc.closed = true
+	}()
+
 	if pc.unusable {
 		return pc.close()
 	}
 
-	pc.updatedtime = time.Now()
+	pc.updatedTime = time.Now()
 	if err := pc.hp.put(pc); err != nil {
 		log.Printf("put conn failed:%v\n", err)
 		pc.hp = nil

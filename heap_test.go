@@ -9,7 +9,7 @@ import (
 
 var (
 	InitialCap = 5
-	MaxCap     = 30
+	MaxCap     = 10
 	MaxIdle    = 5
 	network    = "tcp"
 	address    = "127.0.0.1:7777"
@@ -72,7 +72,7 @@ func TestPriorityQueue(t *testing.T) {
 
 	pc1 := conn1.(*PoolConn)
 	pc2 := conn2.(*PoolConn)
-	if pc1.updatedtime.Sub(pc2.updatedtime) > 0 {
+	if pc1.updatedTime.Sub(pc2.updatedTime) > 0 {
 		t.Errorf("priority is invalid, older conn should first out")
 	}
 	pc1.Close()
@@ -96,10 +96,10 @@ func TestPoolConcurrent(t *testing.T) {
 
 	time.Sleep(5 * time.Second)
 	if p.Len() != MaxCap {
-		t.Errorf("Pool length should equals:, but get:%v", MaxCap, p.Len())
+		t.Errorf("Pool length should equals:%v, but get:%v", MaxCap, p.Len())
 	}
 
-	time.Sleep(30 * time.Second)
+	time.Sleep(10 * time.Second)
 	if p.Len() != MaxIdle {
 		t.Errorf("Pool length should equals MaxIdle, but get:%v", p.Len())
 	}
@@ -145,7 +145,7 @@ func newHeapPool() (Pool, error) {
 		MaxCap:      MaxCap,
 		MaxIdle:     MaxIdle,
 		Idletime:    10 * time.Second,
-		MaxLifetime: time.Minute,
+		MaxLifetime: 30 * time.Second,
 		Factory:     factory,
 	})
 }
