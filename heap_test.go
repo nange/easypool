@@ -31,10 +31,16 @@ func TestNew(t *testing.T) {
 
 func TestPool(t *testing.T) {
 	p, _ := newHeapPool()
+	if p.Len() != InitialCap {
+		t.Errorf("pool len is invalid, excepted: %v, bug get: %v", InitialCap, p.Len())
+	}
 
 	conn, err := p.Get()
 	if err != nil {
 		t.Errorf("Get error: %s", err)
+	}
+	if p.Len() != InitialCap-1 {
+		t.Errorf("pool len is invalid, excepted: %v, bug get: %v", InitialCap-1, p.Len())
 	}
 
 	_, ok := conn.(*PoolConn)
@@ -45,7 +51,6 @@ func TestPool(t *testing.T) {
 	if err := conn.Close(); err != nil {
 		t.Errorf("Pool Conn close error:%v", err)
 	}
-
 	if p.Len() != InitialCap {
 		t.Errorf("Pool size is invalid, size:%v", p.Len())
 	}
@@ -55,6 +60,30 @@ func TestPool(t *testing.T) {
 	_, err = p.Get()
 	if err != ErrClosed {
 		t.Errorf("After pool closed, Get() should return ErrClosed error")
+	}
+}
+
+func TestHeapPool_Len(t *testing.T) {
+	p, _ := newHeapPool()
+	defer p.Close()
+
+	for i := 1; i <= 50; i++ {
+		if p.Len() != InitialCap {
+			t.Errorf("pool len is invalid, excepted: %v, bug get: %v, i: %v", InitialCap, p.Len(), i)
+		}
+
+		conn, err := p.Get()
+		if err != nil {
+			t.Errorf("Get error: %s", err)
+		}
+		if p.Len() != InitialCap-1 {
+			t.Errorf("pool len is invalid, excepted: %v, bug get: %v, i: %v", InitialCap-1, p.Len(), i)
+		}
+
+		conn.Close()
+		if p.Len() != InitialCap {
+			t.Errorf("pool len is invalid, excepted: %v, bug get: %v, i: %v", InitialCap, p.Len(), i)
+		}
 	}
 }
 

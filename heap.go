@@ -41,7 +41,7 @@ type heapPool struct {
 	initialCap  int
 	maxCap      int
 	maxIdle     int
-	idletime    time.Duration
+	idleTime    time.Duration
 	maxLifetime time.Duration
 	cleanerCh   chan struct{}
 
@@ -65,9 +65,9 @@ func NewHeapPool(config *PoolConfig) (Pool, error) {
 	if config.MaxIdle > 0 {
 		maxIdle = config.MaxIdle
 	}
-	idletime := 2 * time.Minute
+	idleTime := 2 * time.Minute
 	if config.Idletime > 0 {
-		idletime = config.Idletime
+		idleTime = config.Idletime
 	}
 	maxLifetime := 15 * time.Minute
 	if config.MaxLifetime > 0 {
@@ -78,7 +78,7 @@ func NewHeapPool(config *PoolConfig) (Pool, error) {
 		initialCap:  initialCap,
 		maxCap:      maxCap,
 		maxIdle:     maxIdle,
-		idletime:    idletime,
+		idleTime:    idleTime,
 		maxLifetime: maxLifetime,
 		cleanerCh:   make(chan struct{}),
 		factory:     config.Factory,
@@ -126,6 +126,7 @@ func (hp *heapPool) Get() (net.Conn, error) {
 			hp.mu.Unlock()
 			return pc, nil
 		}
+		go pc.close()
 	}
 	hp.mu.Unlock()
 
@@ -178,7 +179,7 @@ func (hp *heapPool) Len() int {
 }
 
 func (hp *heapPool) cleaner() {
-	ticker := time.NewTicker(hp.idletime / 2)
+	ticker := time.NewTicker(hp.idleTime / 2)
 	defer ticker.Stop()
 	for {
 		select {
@@ -189,11 +190,13 @@ func (hp *heapPool) cleaner() {
 				pc := (*hp.freeConn)[0]
 				interval := time.Now().Sub(pc.updatedTime)
 				if interval >= hp.maxLifetime {
-					heap.Pop(hp.freeConn).(*PoolConn).close()
+					_p := heap.Pop(hp.freeConn).(*PoolConn)
+					go _p.close()
 					continue
 				}
-				if interval >= hp.idletime && hp.freeConn.Len() > hp.maxIdle {
-					heap.Pop(hp.freeConn).(*PoolConn).close()
+				if interval >= hp.idleTime && hp.freeConn.Len() > hp.maxIdle {
+					_p := heap.Pop(hp.freeConn).(*PoolConn)
+					go _p.close()
 					continue
 				}
 				break

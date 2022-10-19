@@ -11,19 +11,11 @@ type PoolConn struct {
 	hp          *heapPool
 	updatedTime time.Time
 	unusable    bool
-	closed      bool
 }
 
 // Close put the connection back to pool if possible.
 // Executed by multi times is ok.
 func (pc *PoolConn) Close() error {
-	if pc.closed {
-		return nil
-	}
-	defer func() {
-		pc.closed = true
-	}()
-
 	if pc.unusable {
 		return pc.close()
 	}
