@@ -169,7 +169,7 @@ func TestPoolConcurrent2(t *testing.T) {
 }
 
 func newHeapPool() (Pool, error) {
-	return NewHeapPool(&PoolConfig{
+	pool, err := NewHeapPool(&PoolConfig{
 		InitialCap:  InitialCap,
 		MaxCap:      MaxCap,
 		MaxIdle:     MaxIdle,
@@ -177,6 +177,12 @@ func newHeapPool() (Pool, error) {
 		MaxLifetime: 30 * time.Second,
 		Factory:     factory,
 	})
+	if err != nil {
+		return nil, err
+	}
+	// wait connection ready, since init connection is async
+	time.Sleep(time.Second)
+	return pool, nil
 }
 
 func simpleTCPServer() {
